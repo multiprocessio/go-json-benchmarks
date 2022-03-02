@@ -1,3 +1,3 @@
 # Benchmarks for JSON processing in Go
 
-* [Impacting of sorting object keys](./key-sort)
+* [Encoding object arrays](./encoding-object-arrays)
