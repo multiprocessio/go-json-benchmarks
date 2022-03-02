@@ -7,4 +7,4 @@ dsq yellow_tripdata_2021-04.csv > taxi.json
 
 go install github.com/multiprocessio/fakegen@latest
 fakegen --rows 10000 --cols 5000 > wide.json
-fakegen --rows 200000 --cols 50 > long.json
+fakegen --rows 2000000 --cols 50 > long.json
