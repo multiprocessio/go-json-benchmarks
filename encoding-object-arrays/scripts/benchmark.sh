@@ -4,14 +4,12 @@ set -e
 
 go build -o main
 
-encoders="stdlib nosort stream"
+encoders="stdlib,goccy_go-json,nosort,nosort+goccy_go-json,stream"
 samples="long wide taxi"
-times="5"
+times="10"
 
 echo "sample,encoder,time"
 
 for sample in $samples; do
-    for encoder in $encoders; do
-	./main --in $sample.json --out $sample-$encoder.json --encoder $encoder --ntimes $times
-    done
+    ./main --in $sample --encoders $encoders --ntimes $times
 done
