@@ -3,11 +3,13 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
+	"time"
 
-	"github.com/pkg/profile"
+	_ "github.com/pkg/profile"
 )
 
 var (
@@ -140,7 +142,6 @@ func streamEncoder(out *os.File, obj interface{}) error {
 	return err
 }
 
-
 func stdlibEncoder(out *os.File, obj interface{}) error {
 	encoder := json.NewEncoder(out)
 	return encoder.Encode(obj)
@@ -148,7 +149,9 @@ func stdlibEncoder(out *os.File, obj interface{}) error {
 
 func main() {
 	var in, out string
+	var nTimes int = 1
 	encoder := stdlibEncoder
+	encoderArg := ""
 
 	for i, arg := range os.Args {
 		if arg == "--in" {
@@ -163,8 +166,19 @@ func main() {
 			continue
 		}
 
+		if arg == "--ntimes" {
+			var err error
+			nTimes, err = strconv.Atoi(os.Args[i+1])
+			if err != nil {
+				panic(err)
+			}
+			i += 1
+			continue
+		}
+
 		if arg == "--encoder" {
-			switch os.Args[i+1] {
+			encoderArg = os.Args[i+1]
+			switch encoderArg {
 			case "stdlib":
 				encoder = stdlibEncoder
 			case "nosort":
@@ -196,9 +210,15 @@ func main() {
 	}
 	defer fw.Close()
 
-	defer profile.Start().Stop()
-	err = encoder(fw, o)
-	if err != nil {
-		panic(err)
+	//defer profile.Start().Stop()
+	for i := 0; i < nTimes; i++ {
+		t1 := time.Now()
+		err = encoder(fw, o)
+		t2 := time.Now()
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Printf("%s,%s,%s\n", in, encoderArg, t2.Sub(t1))
 	}
 }
