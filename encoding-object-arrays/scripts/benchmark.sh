@@ -5,7 +5,7 @@ set -e
 go build -o main
 
 encoders="stdlib nosort stream"
-samples="long wide"
+samples="long wide taxi"
 times="5"
 
 echo "sample,encoder,time"
