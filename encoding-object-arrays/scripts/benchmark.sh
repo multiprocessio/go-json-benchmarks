@@ -12,6 +12,6 @@ echo "sample,encoder,time"
 
 for sample in $samples; do
     for encoder in $encoders; do
-	./main --in $sample.json --out $sample-$encoder.json --encoder $encoder --nTimes $times
+	./main --in $sample.json --out $sample-$encoder.json --encoder $encoder --ntimes $times
     done
 done
