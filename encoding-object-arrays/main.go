@@ -28,7 +28,6 @@ func nosortEncoder(out *os.File, obj interface{}) error {
 	}
 
 	bo := bufio.NewWriter(out)
-	defer bo.Flush()
 	_, err := bo.Write(J_ARR_OPEN)
 	if err != nil {
 		return err
@@ -103,6 +102,45 @@ func nosortEncoder(out *os.File, obj interface{}) error {
 	return err
 }
 
+func streamEncoder(out *os.File, obj interface{}) error {
+	a, ok := obj.([]interface{})
+	// Fall back to normal encoder
+	if !ok {
+		log.Println("Falling back to stdlib")
+		return stdlibEncoder(out, obj)
+	}
+
+	bo := bufio.NewWriter(out)
+	_, err := bo.Write(J_ARR_OPEN)
+	if err != nil {
+		return err
+	}
+
+	for i, row := range a {
+		// Write a comma before the current object
+		if i > 0 {
+			_, err = bo.Write(J_COMMA_NL)
+			if err != nil {
+				return err
+			}
+		}
+
+		obj, err := json.Marshal(row)
+		if err != nil {
+			return err
+		}
+
+		_, err = bo.Write(obj)
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err = bo.Write(J_ARR_CLOSE)
+	return err
+}
+
+
 func stdlibEncoder(out *os.File, obj interface{}) error {
 	encoder := json.NewEncoder(out)
 	return encoder.Encode(obj)
@@ -131,6 +169,8 @@ func main() {
 				encoder = stdlibEncoder
 			case "nosort":
 				encoder = nosortEncoder
+			case "stream":
+				encoder = streamEncoder
 			}
 			i += 1
 			continue
