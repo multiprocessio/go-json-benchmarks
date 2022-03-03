@@ -14,7 +14,7 @@ import (
 	goccy_json "github.com/goccy/go-json"
 )
 
-func nosortEncoder(out *os.File, obj interface{}) error {
+func nosortEncoder(out *os.File, obj interface{}, marshalFn func(o interface{}) ([]byte, error)) error {
 	a, ok := obj.([]interface{})
 	// Fall back to normal encoder
 	if !ok {
@@ -27,8 +27,6 @@ func nosortEncoder(out *os.File, obj interface{}) error {
 	if err != nil {
 		return err
 	}
-
-	encoder := json.NewEncoder(bo)
 
 	quotedColumns := map[string][]byte{}
 
@@ -44,7 +42,12 @@ func nosortEncoder(out *os.File, obj interface{}) error {
 		r, ok := row.(map[string]interface{})
 		if !ok {
 			log.Println("Falling back to stdlib")
-			err = encoder.Encode(r)
+			bs, err := marshalFn(row)
+			if err != nil {
+				return err
+			}
+
+			_, err = bo.Write(bs)
 			if err != nil {
 				return err
 			}
@@ -78,7 +81,12 @@ func nosortEncoder(out *os.File, obj interface{}) error {
 				return err
 			}
 
-			err = encoder.Encode(val)
+			bs, err := marshalFn(val)
+			if err != nil {
+				return err
+			}
+
+			_, err = bo.Write(bs)
 			if err != nil {
 				return err
 			}
@@ -144,7 +152,13 @@ func main() {
 				case "stdlib":
 					encoders = append(encoders, stdlibEncoder)
 				case "nosort":
-					encoders = append(encoders, nosortEncoder)
+					encoders = append(encoders, func(out *os.File, o interface{}) error {
+						return nosortEncoder(out, o, json.Marshal)
+					})
+				case "nosort_goccy":
+					encoders = append(encoders, func(out *os.File, o interface{}) error {
+						return nosortEncoder(out, o, goccy_json.Marshal)
+					})
 				case "goccy_json":
 					encoders = append(encoders, goccy_jsonEncoder)
 				}
@@ -167,15 +181,16 @@ func main() {
 		panic(err)
 	}
 
+	fmt.Println("sample,encoder,time")
 	for i, encoder := range encoders {
 		encoderArg := encoderArgs[i]
-		fw, err := os.OpenFile(in+"-"+encoderArg+".json", os.O_TRUNC|os.O_WRONLY|os.O_CREATE, os.ModePerm)
-		if err != nil {
-			panic(err)
-		}
-		defer fw.Close()
 
 		for i := 0; i < nTimes; i++ {
+			fw, err := os.OpenFile(in+"-"+encoderArg+".json", os.O_TRUNC|os.O_WRONLY|os.O_CREATE, os.ModePerm)
+			if err != nil {
+				panic(err)
+			}
+
 			t1 := time.Now()
 			err = encoder(fw, o)
 			t2 := time.Now()
@@ -185,6 +200,11 @@ func main() {
 
 			fmt.Printf("%s,%s,%s\n", in, encoderArg, t2.Sub(t1))
 			runtime.GC()
+
+			err = fw.Close()
+			if err != nil{
+				panic(err)
+			}
 		}
 	}
 }
