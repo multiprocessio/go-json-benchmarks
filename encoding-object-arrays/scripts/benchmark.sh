@@ -4,7 +4,7 @@ set -e
 
 go build -o main
 
-encoders="stdlib,goccy_go-json,nosort,nosort+goccy_go-json,stream"
+encoders="stdlib,goccy,nosort"
 samples="long wide taxi"
 times="10"
 
