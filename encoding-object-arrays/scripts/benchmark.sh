@@ -4,9 +4,9 @@ set -e
 
 go build -o main
 
-encoders="stdlib,goccy,nosort"
+encoders="stdlib,goccy,nosort,jsoniter,sonic,nosort_goccy,nosort_jsoniter,nosort_sonic"
 samples="long wide taxi"
-times="10"
+times="2"
 
 echo "sample,encoder,time"
 

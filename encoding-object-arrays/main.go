@@ -12,6 +12,9 @@ import (
 	"time"
 
 	goccy_json "github.com/goccy/go-json"
+	"github.com/bytedance/sonic"
+	sonic_encoder "github.com/bytedance/sonic/encoder"
+	jsoniter "github.com/json-iterator/go"
 )
 
 func nosortEncoder(out *os.File, obj interface{}, marshalFn func(o interface{}) ([]byte, error)) error {
@@ -120,6 +123,29 @@ func goccy_jsonEncoder(out *os.File, obj interface{}) error {
 	return encoder.Encode(obj)
 }
 
+func jsoniterEncoder(out *os.File, obj interface{}) error {
+	encoder := jsoniter.NewEncoder(out)
+	return encoder.Encode(obj)
+}
+
+func sonicEncoder(out *os.File, obj interface{}) error {
+	v, err := sonic_encoder.Encode(obj, 0)
+	if err != nil {
+		return err
+	}
+
+	for len(v) > 0 {
+		n, err := out.Write(v)
+		if err != nil {
+			return err
+		}
+
+		v = v[n:]
+	}
+
+	return nil
+}
+
 func main() {
 	var in string
 	nTimes := 1
@@ -159,8 +185,20 @@ func main() {
 					encoders = append(encoders, func(out *os.File, o interface{}) error {
 						return nosortEncoder(out, o, goccy_json.Marshal)
 					})
-				case "goccy_json":
+				case "nosort_sonic":
+					encoders = append(encoders, func(out *os.File, o interface{}) error {
+						return nosortEncoder(out, o, sonic.Marshal)
+					})
+				case "nosort_jsoniter":
+					encoders = append(encoders, func(out *os.File, o interface{}) error {
+						return nosortEncoder(out, o, jsoniter.Marshal)
+					})
+				case "goccy":
 					encoders = append(encoders, goccy_jsonEncoder)
+				case "sonic":
+					encoders = append(encoders, sonicEncoder)
+				case "jsoniter":
+					encoders = append(encoders, jsoniterEncoder)
 				}
 			}
 			i += 1
@@ -181,7 +219,6 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println("sample,encoder,time")
 	for i, encoder := range encoders {
 		encoderArg := encoderArgs[i]
 
