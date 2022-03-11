@@ -4,7 +4,7 @@ set -e
 
 go build -o main
 
-encoders="stdlib,goccy,nosort,jsoniter,sonic,nosort_goccy,nosort_jsoniter,nosort_sonic"
+encoders="stdlib,segment,goccy,nosort,jsoniter,sonic,nosort_segment,nosort_goccy,nosort_jsoniter,nosort_sonic"
 samples="long wide taxi"
 times="2"
 

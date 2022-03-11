@@ -15,6 +15,7 @@ import (
 	"github.com/bytedance/sonic"
 	sonic_encoder "github.com/bytedance/sonic/encoder"
 	jsoniter "github.com/json-iterator/go"
+	segment "github.com/segmentio/encoding/json"
 )
 
 func nosortEncoder(out *os.File, obj interface{}, marshalFn func(o interface{}) ([]byte, error)) error {
@@ -123,6 +124,11 @@ func goccy_jsonEncoder(out *os.File, obj interface{}) error {
 	return encoder.Encode(obj)
 }
 
+func segmentEncoder(out *os.File, obj interface{}) error {
+	encoder := segment.NewEncoder(out)
+	return encoder.Encode(obj)
+}
+
 func jsoniterEncoder(out *os.File, obj interface{}) error {
 	encoder := jsoniter.NewEncoder(out)
 	return encoder.Encode(obj)
@@ -193,11 +199,17 @@ func main() {
 					encoders = append(encoders, func(out *os.File, o interface{}) error {
 						return nosortEncoder(out, o, jsoniter.Marshal)
 					})
+				case "nosort_segment":
+					encoders = append(encoders, func(out *os.File, o interface{}) error {
+						return nosortEncoder(out, o, segment.Marshal)
+					})
 				case "goccy":
 					encoders = append(encoders, goccy_jsonEncoder)
 				case "sonic":
 					encoders = append(encoders, sonicEncoder)
 				case "jsoniter":
+					encoders = append(encoders, jsoniterEncoder)
+				case "segment":
 					encoders = append(encoders, jsoniterEncoder)
 				}
 			}

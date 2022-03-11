@@ -2,7 +2,7 @@
 
 set -e
 
-go build -o main
+CGO_ENABLED=1 go build -o main
 
 decoders="stdlib,goccy,jsoniter,sonic"
 samples="long wide taxi"
